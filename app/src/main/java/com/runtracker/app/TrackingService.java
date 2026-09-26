@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.location.Location;
 import android.os.IBinder;
 import android.os.Looper;
 
@@ -15,8 +16,6 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
-
-import android.location.Location;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -81,7 +80,7 @@ public class TrackingService extends Service {
 
                     lastLocation = location;
 
-                    sendUpdate();
+                    sendLocationUpdate(location);
                 }
             }
         };
@@ -138,6 +137,13 @@ public class TrackingService extends Service {
                 createNotification()
         );
 
+        requestLocationUpdates();
+
+        sendUpdate();
+    }
+
+    private void requestLocationUpdates() {
+
         LocationRequest request =
                 new LocationRequest.Builder(
                         Priority.PRIORITY_HIGH_ACCURACY,
@@ -157,10 +163,7 @@ public class TrackingService extends Service {
         } catch (SecurityException e) {
 
             stopSelf();
-            return;
         }
-
-        sendUpdate();
     }
 
     private void pauseTracking() {
@@ -188,27 +191,7 @@ public class TrackingService extends Service {
 
             paused = false;
 
-            LocationRequest request =
-                    new LocationRequest.Builder(
-                            Priority.PRIORITY_HIGH_ACCURACY,
-                            2000
-                    )
-                    .setMinUpdateDistanceMeters(2)
-                    .build();
-
-            try {
-
-                locationClient.requestLocationUpdates(
-                        request,
-                        locationCallback,
-                        Looper.getMainLooper()
-                );
-
-            } catch (SecurityException e) {
-
-                stopSelf();
-                return;
-            }
+            requestLocationUpdates();
         }
 
         sendUpdate();
@@ -228,7 +211,8 @@ public class TrackingService extends Service {
                             - startTime;
         }
 
-        long finalTime = accumulatedTime;
+        long finalTime =
+                accumulatedTime;
 
         saveRun(
                 totalDistance,
@@ -262,8 +246,10 @@ public class TrackingService extends Service {
         }
 
         return accumulatedTime +
-                (System.currentTimeMillis()
-                        - startTime);
+                (
+                        System.currentTimeMillis()
+                                - startTime
+                );
     }
 
     private void saveRun(
@@ -355,12 +341,68 @@ public class TrackingService extends Service {
         }
     }
 
+    private void sendLocationUpdate(
+            Location location) {
+
+        Intent intent =
+                new Intent(
+                        "RUN_TRACKER_LOCATION"
+                );
+
+        intent.setPackage(
+                getPackageName()
+        );
+
+        intent.putExtra(
+                "latitude",
+                location.getLatitude()
+        );
+
+        intent.putExtra(
+                "longitude",
+                location.getLongitude()
+        );
+
+        intent.putExtra(
+                "distance",
+                totalDistance
+        );
+
+        intent.putExtra(
+                "time",
+                getElapsedTime()
+        );
+
+        intent.putExtra(
+                "speed",
+                location.getSpeed()
+        );
+
+        intent.putExtra(
+                "running",
+                running
+        );
+
+        intent.putExtra(
+                "paused",
+                paused
+        );
+
+        sendBroadcast(intent);
+
+        sendUpdate();
+    }
+
     private void sendUpdate() {
 
         Intent intent =
-                new Intent("RUN_TRACKER_UPDATE");
+                new Intent(
+                        "RUN_TRACKER_UPDATE"
+                );
 
-        intent.setPackage(getPackageName());
+        intent.setPackage(
+                getPackageName()
+        );
 
         intent.putExtra(
                 "distance",
@@ -447,4 +489,4 @@ public class TrackingService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-                }
+}

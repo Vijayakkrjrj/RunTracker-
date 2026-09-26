@@ -23,6 +23,7 @@ public class MainActivity extends Activity {
     private Button startButton;
     private Button pauseButton;
     private Button stopButton;
+    private Button historyButton;
 
     private final BroadcastReceiver updateReceiver = new BroadcastReceiver() {
         @Override
@@ -32,14 +33,9 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            float distance =
-                    intent.getFloatExtra("distance", 0f);
-
-            long time =
-                    intent.getLongExtra("time", 0);
-
-            float speed =
-                    intent.getFloatExtra("speed", 0f);
+            float distance = intent.getFloatExtra("distance", 0f);
+            long time = intent.getLongExtra("time", 0);
+            float speed = intent.getFloatExtra("speed", 0f);
 
             boolean running =
                     intent.getBooleanExtra("running", false);
@@ -47,7 +43,6 @@ public class MainActivity extends Activity {
             boolean paused =
                     intent.getBooleanExtra("paused", false);
 
-            // Distance
             float distanceKm = distance / 1000f;
 
             distanceText.setText(
@@ -57,7 +52,6 @@ public class MainActivity extends Activity {
                     )
             );
 
-            // Time
             long totalSeconds = time / 1000;
             long minutes = totalSeconds / 60;
             long seconds = totalSeconds % 60;
@@ -70,7 +64,6 @@ public class MainActivity extends Activity {
                     )
             );
 
-            // Current speed
             speedText.setText(
                     String.format(
                             "Speed: %.1f km/h",
@@ -78,7 +71,6 @@ public class MainActivity extends Activity {
                     )
             );
 
-            // Average speed
             float averageSpeed = 0f;
 
             if (time > 0 && distance > 0) {
@@ -94,12 +86,10 @@ public class MainActivity extends Activity {
                     )
             );
 
-            // Pace
             if (distanceKm > 0.01f && time > 0) {
 
                 float paceSecondsPerKm =
-                        (time / 1000f)
-                                / distanceKm;
+                        (time / 1000f) / distanceKm;
 
                 int paceMinutes =
                         (int) (paceSecondsPerKm / 60);
@@ -122,13 +112,11 @@ public class MainActivity extends Activity {
                 );
             }
 
-            // Button states
             if (!running) {
 
                 startButton.setEnabled(true);
                 pauseButton.setEnabled(false);
                 stopButton.setEnabled(false);
-
                 pauseButton.setText("PAUSE");
 
             } else if (paused) {
@@ -136,7 +124,6 @@ public class MainActivity extends Activity {
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
-
                 pauseButton.setText("RESUME");
 
             } else {
@@ -144,7 +131,6 @@ public class MainActivity extends Activity {
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
-
                 pauseButton.setText("PAUSE");
             }
         }
@@ -165,6 +151,7 @@ public class MainActivity extends Activity {
         startButton = findViewById(R.id.startButton);
         pauseButton = findViewById(R.id.pauseButton);
         stopButton = findViewById(R.id.stopButton);
+        historyButton = findViewById(R.id.historyButton);
 
         requestPermissionsIfNeeded();
 
@@ -178,6 +165,18 @@ public class MainActivity extends Activity {
 
         stopButton.setOnClickListener(
                 v -> stopTracking()
+        );
+
+        historyButton.setOnClickListener(
+                v -> {
+                    Intent intent =
+                            new Intent(
+                                    MainActivity.this,
+                                    HistoryActivity.class
+                            );
+
+                    startActivity(intent);
+                }
         );
     }
 
@@ -262,11 +261,8 @@ public class MainActivity extends Activity {
         intent.setAction("START");
 
         if (Build.VERSION.SDK_INT >= 26) {
-
             startForegroundService(intent);
-
         } else {
-
             startService(intent);
         }
     }
@@ -296,4 +292,4 @@ public class MainActivity extends Activity {
 
         startService(intent);
     }
-    }
+            }

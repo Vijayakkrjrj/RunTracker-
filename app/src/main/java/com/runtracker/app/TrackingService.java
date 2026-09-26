@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.Looper;
 
@@ -16,6 +17,13 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
 import android.location.Location;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class TrackingService extends Service {
 
@@ -220,6 +228,13 @@ public class TrackingService extends Service {
                             - startTime;
         }
 
+        long finalTime = accumulatedTime;
+
+        saveRun(
+                totalDistance,
+                finalTime
+        );
+
         running = false;
         paused = false;
 
@@ -249,6 +264,95 @@ public class TrackingService extends Service {
         return accumulatedTime +
                 (System.currentTimeMillis()
                         - startTime);
+    }
+
+    private void saveRun(
+            float distance,
+            long time) {
+
+        try {
+
+            SharedPreferences preferences =
+                    getSharedPreferences(
+                            "run_history",
+                            MODE_PRIVATE
+                    );
+
+            String oldHistory =
+                    preferences.getString(
+                            "runs",
+                            "[]"
+                    );
+
+            JSONArray runs =
+                    new JSONArray(oldHistory);
+
+            JSONObject run =
+                    new JSONObject();
+
+            float distanceKm =
+                    distance / 1000f;
+
+            float averageSpeed = 0f;
+
+            if (time > 0 && distance > 0) {
+
+                averageSpeed =
+                        distanceKm
+                                / (time / 3600000f);
+            }
+
+            float paceSecondsPerKm = 0f;
+
+            if (distanceKm > 0) {
+
+                paceSecondsPerKm =
+                        (time / 1000f)
+                                / distanceKm;
+            }
+
+            run.put(
+                    "date",
+                    new SimpleDateFormat(
+                            "dd MMM yyyy, hh:mm a",
+                            Locale.getDefault()
+                    ).format(new Date())
+            );
+
+            run.put(
+                    "distance",
+                    distanceKm
+            );
+
+            run.put(
+                    "time",
+                    time
+            );
+
+            run.put(
+                    "averageSpeed",
+                    averageSpeed
+            );
+
+            run.put(
+                    "pace",
+                    paceSecondsPerKm
+            );
+
+            runs.put(run);
+
+            preferences
+                    .edit()
+                    .putString(
+                            "runs",
+                            runs.toString()
+                    )
+                    .apply();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
     }
 
     private void sendUpdate() {
@@ -343,4 +447,4 @@ public class TrackingService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-            }
+                }

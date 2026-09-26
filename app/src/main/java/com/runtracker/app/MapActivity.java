@@ -1,492 +1,198 @@
 package com.runtracker.app;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.Service;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.location.Location;
-import android.os.IBinder;
-import android.os.Looper;
+import android.content.IntentFilter;
+import android.os.Build;
+import android.os.Bundle;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.Priority;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+import org.osmdroid.views.overlay.Polyline;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+import java.util.ArrayList;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
+public class MapActivity extends Activity {
 
-public class TrackingService extends Service {
+    private MapView mapView;
+    private Polyline routeLine;
+    private Marker currentMarker;
 
-    private static final String CHANNEL_ID =
-            "run_tracker_channel";
+    private ArrayList<GeoPoint> routePoints;
 
-    private FusedLocationProviderClient locationClient;
+    private final BroadcastReceiver locationReceiver =
+            new BroadcastReceiver() {
 
-    private Location lastLocation;
+        @Override
+        public void onReceive(
+                Context context,
+                Intent intent) {
 
-    private float totalDistance = 0f;
+            if (!"RUN_TRACKER_LOCATION".equals(
+                    intent.getAction())) {
 
-    private long startTime = 0;
-    private long accumulatedTime = 0;
+                return;
+            }
 
-    private boolean running = false;
-    private boolean paused = false;
+            double latitude =
+                    intent.getDoubleExtra(
+                            "latitude",
+                            0
+                    );
 
-    private LocationCallback locationCallback;
+            double longitude =
+                    intent.getDoubleExtra(
+                            "longitude",
+                            0
+                    );
+
+            boolean running =
+                    intent.getBooleanExtra(
+                            "running",
+                            false
+                    );
+
+            boolean paused =
+                    intent.getBooleanExtra(
+                            "paused",
+                            false
+                    );
+
+            if (!running || paused) {
+                return;
+            }
+
+            GeoPoint point =
+                    new GeoPoint(
+                            latitude,
+                            longitude
+                    );
+
+            routePoints.add(point);
+
+            routeLine.setPoints(routePoints);
+
+            currentMarker.setPosition(point);
+
+            mapView.getController()
+                    .setCenter(point);
+
+            mapView.invalidate();
+        }
+    };
 
     @Override
-    public void onCreate() {
-        super.onCreate();
+    protected void onCreate(
+            Bundle savedInstanceState) {
 
-        locationClient =
-                LocationServices
-                        .getFusedLocationProviderClient(this);
+        super.onCreate(savedInstanceState);
 
-        createNotificationChannel();
-
-        locationCallback = new LocationCallback() {
-
-            @Override
-            public void onLocationResult(
-                    LocationResult result) {
-
-                if (!running || paused) {
-                    return;
-                }
-
-                for (Location location :
-                        result.getLocations()) {
-
-                    if (lastLocation != null) {
-
-                        float distance =
-                                lastLocation.distanceTo(location);
-
-                        if (distance > 0.5f &&
-                                distance < 100f) {
-
-                            totalDistance += distance;
-                        }
-                    }
-
-                    lastLocation = location;
-
-                    sendLocationUpdate(location);
-                }
-            }
-        };
-    }
-
-    private void createNotificationChannel() {
-
-        NotificationChannel channel =
-                new NotificationChannel(
-                        CHANNEL_ID,
-                        "Run Tracker",
-                        NotificationManager.IMPORTANCE_LOW
+        Configuration.getInstance()
+                .setUserAgentValue(
+                        getPackageName()
                 );
 
-        NotificationManager manager =
-                getSystemService(
-                        NotificationManager.class
+        setContentView(
+                R.layout.activity_map
+        );
+
+        mapView =
+                findViewById(
+                        R.id.mapView
                 );
 
-        manager.createNotificationChannel(channel);
-    }
-
-    private Notification createNotification() {
-
-        return new Notification.Builder(
-                this,
-                CHANNEL_ID
-        )
-                .setContentTitle("Run Tracker")
-                .setContentText(
-                        "GPS tracking is active"
-                )
-                .setSmallIcon(
-                        android.R.drawable.ic_menu_mylocation
-                )
-                .setOngoing(true)
-                .build();
-    }
-
-    private void startTracking() {
-
-        running = true;
-        paused = false;
-
-        totalDistance = 0f;
-        accumulatedTime = 0;
-        lastLocation = null;
-
-        startTime =
-                System.currentTimeMillis();
-
-        startForeground(
-                1,
-                createNotification()
+        mapView.setTileSource(
+                TileSourceFactory.MAPNIK
         );
 
-        requestLocationUpdates();
+        mapView.setMultiTouchControls(true);
 
-        sendUpdate();
-    }
+        mapView.setBuiltInZoomControls(true);
 
-    private void requestLocationUpdates() {
+        mapView.getController()
+                .setZoom(17.0);
 
-        LocationRequest request =
-                new LocationRequest.Builder(
-                        Priority.PRIORITY_HIGH_ACCURACY,
-                        2000
-                )
-                .setMinUpdateDistanceMeters(2)
-                .build();
+        routePoints =
+                new ArrayList<>();
 
-        try {
+        routeLine =
+                new Polyline();
 
-            locationClient.requestLocationUpdates(
-                    request,
-                    locationCallback,
-                    Looper.getMainLooper()
-            );
+        routeLine.setWidth(8f);
 
-        } catch (SecurityException e) {
+        mapView.getOverlays()
+                .add(routeLine);
 
-            stopSelf();
-        }
-    }
+        currentMarker =
+                new Marker(mapView);
 
-    private void pauseTracking() {
-
-        if (!running) {
-            return;
-        }
-
-        if (!paused) {
-
-            accumulatedTime +=
-                    System.currentTimeMillis()
-                            - startTime;
-
-            paused = true;
-
-            locationClient.removeLocationUpdates(
-                    locationCallback
-            );
-
-        } else {
-
-            startTime =
-                    System.currentTimeMillis();
-
-            paused = false;
-
-            requestLocationUpdates();
-        }
-
-        sendUpdate();
-    }
-
-    private void stopTracking() {
-
-        if (!running) {
-            stopSelf();
-            return;
-        }
-
-        if (!paused) {
-
-            accumulatedTime +=
-                    System.currentTimeMillis()
-                            - startTime;
-        }
-
-        long finalTime =
-                accumulatedTime;
-
-        saveRun(
-                totalDistance,
-                finalTime
+        currentMarker.setTitle(
+                "Current Location"
         );
 
-        running = false;
-        paused = false;
-
-        locationClient.removeLocationUpdates(
-                locationCallback
-        );
-
-        sendUpdate();
-
-        stopForeground(
-                STOP_FOREGROUND_REMOVE
-        );
-
-        stopSelf();
+        mapView.getOverlays()
+                .add(currentMarker);
     }
 
-    private long getElapsedTime() {
+    @Override
+    protected void onStart() {
 
-        if (!running) {
-            return accumulatedTime;
-        }
+        super.onStart();
 
-        if (paused) {
-            return accumulatedTime;
-        }
-
-        return accumulatedTime +
-                (
-                        System.currentTimeMillis()
-                                - startTime
-                );
-    }
-
-    private void saveRun(
-            float distance,
-            long time) {
-
-        try {
-
-            SharedPreferences preferences =
-                    getSharedPreferences(
-                            "run_history",
-                            MODE_PRIVATE
-                    );
-
-            String oldHistory =
-                    preferences.getString(
-                            "runs",
-                            "[]"
-                    );
-
-            JSONArray runs =
-                    new JSONArray(oldHistory);
-
-            JSONObject run =
-                    new JSONObject();
-
-            float distanceKm =
-                    distance / 1000f;
-
-            float averageSpeed = 0f;
-
-            if (time > 0 && distance > 0) {
-
-                averageSpeed =
-                        distanceKm
-                                / (time / 3600000f);
-            }
-
-            float paceSecondsPerKm = 0f;
-
-            if (distanceKm > 0) {
-
-                paceSecondsPerKm =
-                        (time / 1000f)
-                                / distanceKm;
-            }
-
-            run.put(
-                    "date",
-                    new SimpleDateFormat(
-                            "dd MMM yyyy, hh:mm a",
-                            Locale.getDefault()
-                    ).format(new Date())
-            );
-
-            run.put(
-                    "distance",
-                    distanceKm
-            );
-
-            run.put(
-                    "time",
-                    time
-            );
-
-            run.put(
-                    "averageSpeed",
-                    averageSpeed
-            );
-
-            run.put(
-                    "pace",
-                    paceSecondsPerKm
-            );
-
-            runs.put(run);
-
-            preferences
-                    .edit()
-                    .putString(
-                            "runs",
-                            runs.toString()
-                    )
-                    .apply();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    private void sendLocationUpdate(
-            Location location) {
-
-        Intent intent =
-                new Intent(
+        IntentFilter filter =
+                new IntentFilter(
                         "RUN_TRACKER_LOCATION"
                 );
 
-        intent.setPackage(
-                getPackageName()
-        );
+        if (Build.VERSION.SDK_INT >= 33) {
 
-        intent.putExtra(
-                "latitude",
-                location.getLatitude()
-        );
-
-        intent.putExtra(
-                "longitude",
-                location.getLongitude()
-        );
-
-        intent.putExtra(
-                "distance",
-                totalDistance
-        );
-
-        intent.putExtra(
-                "time",
-                getElapsedTime()
-        );
-
-        intent.putExtra(
-                "speed",
-                location.getSpeed()
-        );
-
-        intent.putExtra(
-                "running",
-                running
-        );
-
-        intent.putExtra(
-                "paused",
-                paused
-        );
-
-        sendBroadcast(intent);
-
-        sendUpdate();
-    }
-
-    private void sendUpdate() {
-
-        Intent intent =
-                new Intent(
-                        "RUN_TRACKER_UPDATE"
-                );
-
-        intent.setPackage(
-                getPackageName()
-        );
-
-        intent.putExtra(
-                "distance",
-                totalDistance
-        );
-
-        intent.putExtra(
-                "time",
-                getElapsedTime()
-        );
-
-        intent.putExtra(
-                "running",
-                running
-        );
-
-        intent.putExtra(
-                "paused",
-                paused
-        );
-
-        if (lastLocation != null &&
-                !paused) {
-
-            intent.putExtra(
-                    "speed",
-                    lastLocation.getSpeed()
+            registerReceiver(
+                    locationReceiver,
+                    filter,
+                    Context.RECEIVER_NOT_EXPORTED
             );
 
         } else {
 
-            intent.putExtra(
-                    "speed",
-                    0f
+            registerReceiver(
+                    locationReceiver,
+                    filter
             );
         }
-
-        sendBroadcast(intent);
     }
 
     @Override
-    public int onStartCommand(
-            Intent intent,
-            int flags,
-            int startId) {
+    protected void onStop() {
 
-        if (intent != null) {
+        unregisterReceiver(
+                locationReceiver
+        );
 
-            String action =
-                    intent.getAction();
+        super.onStop();
+    }
 
-            if ("START".equals(action)) {
+    @Override
+    protected void onResume() {
 
-                startTracking();
+        super.onResume();
 
-            } else if ("PAUSE".equals(action)) {
+        if (mapView != null) {
+            mapView.onResume();
+        }
+    }
 
-                pauseTracking();
+    @Override
+    protected void onPause() {
 
-            } else if ("STOP".equals(action)) {
-
-                stopTracking();
-            }
+        if (mapView != null) {
+            mapView.onPause();
         }
 
-        return START_NOT_STICKY;
+        super.onPause();
     }
-
-    @Override
-    public void onDestroy() {
-
-        if (locationClient != null &&
-                locationCallback != null) {
-
-            locationClient.removeLocationUpdates(
-                    locationCallback
-            );
-        }
-
-        super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-    }
+}

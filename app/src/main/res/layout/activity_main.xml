@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RUN TRACKER"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="35dp"/>
+
+    <TextView
+        android:id="@+id/distanceText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distance: 0.00 km"
+        android:textSize="25sp"/>
+
+    <TextView
+        android:id="@+id/timeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Time: 00:00"
+        android:textSize="22sp"
+        android:layout_marginTop="15dp"/>
+
+    <TextView
+        android:id="@+id/speedText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Speed: 0.0 km/h"
+        android:textSize="22sp"
+        android:layout_marginTop="15dp"/>
+
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="220dp"
+        android:layout_height="60dp"
+        android:text="START RUN"
+        android:textSize="18sp"
+        android:layout_marginTop="40dp"/>
+
+    <Button
+        android:id="@+id/pauseButton"
+        android:layout_width="220dp"
+        android:layout_height="60dp"
+        android:text="PAUSE"
+        android:enabled="false"/>
+
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="220dp"
+        android:layout_height="60dp"
+        android:text="STOP"
+        android:enabled="false"/>
+
+</LinearLayout>

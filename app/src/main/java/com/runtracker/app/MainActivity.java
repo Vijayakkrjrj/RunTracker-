@@ -17,6 +17,8 @@ public class MainActivity extends Activity {
     private TextView distanceText;
     private TextView timeText;
     private TextView speedText;
+    private TextView avgSpeedText;
+    private TextView paceText;
 
     private Button startButton;
     private Button pauseButton;
@@ -30,9 +32,14 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            float distance = intent.getFloatExtra("distance", 0f);
-            long time = intent.getLongExtra("time", 0);
-            float speed = intent.getFloatExtra("speed", 0f);
+            float distance =
+                    intent.getFloatExtra("distance", 0f);
+
+            long time =
+                    intent.getLongExtra("time", 0);
+
+            float speed =
+                    intent.getFloatExtra("speed", 0f);
 
             boolean running =
                     intent.getBooleanExtra("running", false);
@@ -40,13 +47,17 @@ public class MainActivity extends Activity {
             boolean paused =
                     intent.getBooleanExtra("paused", false);
 
+            // Distance
+            float distanceKm = distance / 1000f;
+
             distanceText.setText(
                     String.format(
                             "Distance: %.2f km",
-                            distance / 1000f
+                            distanceKm
                     )
             );
 
+            // Time
             long totalSeconds = time / 1000;
             long minutes = totalSeconds / 60;
             long seconds = totalSeconds % 60;
@@ -59,6 +70,7 @@ public class MainActivity extends Activity {
                     )
             );
 
+            // Current speed
             speedText.setText(
                     String.format(
                             "Speed: %.1f km/h",
@@ -66,22 +78,73 @@ public class MainActivity extends Activity {
                     )
             );
 
+            // Average speed
+            float averageSpeed = 0f;
+
+            if (time > 0 && distance > 0) {
+                averageSpeed =
+                        (distance / 1000f)
+                                / (time / 3600000f);
+            }
+
+            avgSpeedText.setText(
+                    String.format(
+                            "Average: %.1f km/h",
+                            averageSpeed
+                    )
+            );
+
+            // Pace
+            if (distanceKm > 0.01f && time > 0) {
+
+                float paceSecondsPerKm =
+                        (time / 1000f)
+                                / distanceKm;
+
+                int paceMinutes =
+                        (int) (paceSecondsPerKm / 60);
+
+                int paceSeconds =
+                        (int) (paceSecondsPerKm % 60);
+
+                paceText.setText(
+                        String.format(
+                                "Pace: %02d:%02d min/km",
+                                paceMinutes,
+                                paceSeconds
+                        )
+                );
+
+            } else {
+
+                paceText.setText(
+                        "Pace: --:-- min/km"
+                );
+            }
+
+            // Button states
             if (!running) {
+
                 startButton.setEnabled(true);
                 pauseButton.setEnabled(false);
                 stopButton.setEnabled(false);
+
                 pauseButton.setText("PAUSE");
-            }
-            else if (paused) {
+
+            } else if (paused) {
+
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
+
                 pauseButton.setText("RESUME");
-            }
-            else {
+
+            } else {
+
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
+
                 pauseButton.setText("PAUSE");
             }
         }
@@ -96,6 +159,8 @@ public class MainActivity extends Activity {
         distanceText = findViewById(R.id.distanceText);
         timeText = findViewById(R.id.timeText);
         speedText = findViewById(R.id.speedText);
+        avgSpeedText = findViewById(R.id.avgSpeedText);
+        paceText = findViewById(R.id.paceText);
 
         startButton = findViewById(R.id.startButton);
         pauseButton = findViewById(R.id.pauseButton);
@@ -103,11 +168,17 @@ public class MainActivity extends Activity {
 
         requestPermissionsIfNeeded();
 
-        startButton.setOnClickListener(v -> startTracking());
+        startButton.setOnClickListener(
+                v -> startTracking()
+        );
 
-        pauseButton.setOnClickListener(v -> pauseResumeTracking());
+        pauseButton.setOnClickListener(
+                v -> pauseResumeTracking()
+        );
 
-        stopButton.setOnClickListener(v -> stopTracking());
+        stopButton.setOnClickListener(
+                v -> stopTracking()
+        );
     }
 
     @Override
@@ -118,12 +189,15 @@ public class MainActivity extends Activity {
                 new IntentFilter("RUN_TRACKER_UPDATE");
 
         if (Build.VERSION.SDK_INT >= 33) {
+
             registerReceiver(
                     updateReceiver,
                     filter,
                     Context.RECEIVER_NOT_EXPORTED
             );
+
         } else {
+
             registerReceiver(
                     updateReceiver,
                     filter
@@ -133,7 +207,9 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStop() {
+
         unregisterReceiver(updateReceiver);
+
         super.onStop();
     }
 
@@ -178,13 +254,19 @@ public class MainActivity extends Activity {
         }
 
         Intent intent =
-                new Intent(this, TrackingService.class);
+                new Intent(
+                        this,
+                        TrackingService.class
+                );
 
         intent.setAction("START");
 
         if (Build.VERSION.SDK_INT >= 26) {
+
             startForegroundService(intent);
+
         } else {
+
             startService(intent);
         }
     }
@@ -192,7 +274,10 @@ public class MainActivity extends Activity {
     private void pauseResumeTracking() {
 
         Intent intent =
-                new Intent(this, TrackingService.class);
+                new Intent(
+                        this,
+                        TrackingService.class
+                );
 
         intent.setAction("PAUSE");
 
@@ -202,10 +287,13 @@ public class MainActivity extends Activity {
     private void stopTracking() {
 
         Intent intent =
-                new Intent(this, TrackingService.class);
+                new Intent(
+                        this,
+                        TrackingService.class
+                );
 
         intent.setAction("STOP");
 
         startService(intent);
     }
-                }
+    }

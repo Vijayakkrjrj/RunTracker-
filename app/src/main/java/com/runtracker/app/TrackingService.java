@@ -43,6 +43,9 @@ public class TrackingService extends Service {
 
     private LocationCallback locationCallback;
 
+    // Route points of current run
+    private JSONArray routePoints;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -52,6 +55,8 @@ public class TrackingService extends Service {
                         .getFusedLocationProviderClient(this);
 
         createNotificationChannel();
+
+        routePoints = new JSONArray();
 
         locationCallback = new LocationCallback() {
 
@@ -79,6 +84,8 @@ public class TrackingService extends Service {
                     }
 
                     lastLocation = location;
+
+                    saveRoutePoint(location);
 
                     sendLocationUpdate(location);
                 }
@@ -128,6 +135,8 @@ public class TrackingService extends Service {
         totalDistance = 0f;
         accumulatedTime = 0;
         lastLocation = null;
+
+        routePoints = new JSONArray();
 
         startTime =
                 System.currentTimeMillis();
@@ -252,6 +261,32 @@ public class TrackingService extends Service {
                 );
     }
 
+    private void saveRoutePoint(
+            Location location) {
+
+        try {
+
+            JSONObject point =
+                    new JSONObject();
+
+            point.put(
+                    "latitude",
+                    location.getLatitude()
+            );
+
+            point.put(
+                    "longitude",
+                    location.getLongitude()
+            );
+
+            routePoints.put(point);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+
     private void saveRun(
             float distance,
             long time) {
@@ -325,6 +360,12 @@ public class TrackingService extends Service {
                     paceSecondsPerKm
             );
 
+            // Save complete GPS route
+            run.put(
+                    "route",
+                    routePoints
+            );
+
             runs.put(run);
 
             preferences
@@ -392,101 +433,3 @@ public class TrackingService extends Service {
 
         sendUpdate();
     }
-
-    private void sendUpdate() {
-
-        Intent intent =
-                new Intent(
-                        "RUN_TRACKER_UPDATE"
-                );
-
-        intent.setPackage(
-                getPackageName()
-        );
-
-        intent.putExtra(
-                "distance",
-                totalDistance
-        );
-
-        intent.putExtra(
-                "time",
-                getElapsedTime()
-        );
-
-        intent.putExtra(
-                "running",
-                running
-        );
-
-        intent.putExtra(
-                "paused",
-                paused
-        );
-
-        if (lastLocation != null &&
-                !paused) {
-
-            intent.putExtra(
-                    "speed",
-                    lastLocation.getSpeed()
-            );
-
-        } else {
-
-            intent.putExtra(
-                    "speed",
-                    0f
-            );
-        }
-
-        sendBroadcast(intent);
-    }
-
-    @Override
-    public int onStartCommand(
-            Intent intent,
-            int flags,
-            int startId) {
-
-        if (intent != null) {
-
-            String action =
-                    intent.getAction();
-
-            if ("START".equals(action)) {
-
-                startTracking();
-
-            } else if ("PAUSE".equals(action)) {
-
-                pauseTracking();
-
-            } else if ("STOP".equals(action)) {
-
-                stopTracking();
-            }
-        }
-
-        return START_NOT_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-
-        if (locationClient != null &&
-                locationCallback != null) {
-
-            locationClient.removeLocationUpdates(
-                    locationCallback
-            );
-        }
-
-        super.onDestroy();
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-}

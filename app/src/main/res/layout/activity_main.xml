@@ -84,4 +84,10 @@
         android:text="HISTORY"
         android:layout_marginTop="15dp"/>
 
+    <Button 
+        android:id="@+id/mapButton"
+        android:layout_width="220dp"
+        android:layout_height="58dp"
+        android:text="MAP"
+        android:layout_marginTop="10dp"/>
 </LinearLayout>

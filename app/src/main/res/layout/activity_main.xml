@@ -14,7 +14,7 @@
         android:text="RUN TRACKER"
         android:textSize="30sp"
         android:textStyle="bold"
-        android:layout_marginBottom="30dp"/>
+        android:layout_marginBottom="25dp"/>
 
     <TextView
         android:id="@+id/distanceText"
@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:text="Time: 00:00"
         android:textSize="22sp"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:id="@+id/speedText"
@@ -37,7 +37,7 @@
         android:layout_height="wrap_content"
         android:text="Speed: 0.0 km/h"
         android:textSize="22sp"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:id="@+id/avgSpeedText"
@@ -45,7 +45,7 @@
         android:layout_height="wrap_content"
         android:text="Average: 0.0 km/h"
         android:textSize="22sp"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="10dp"/>
 
     <TextView
         android:id="@+id/paceText"
@@ -53,28 +53,35 @@
         android:layout_height="wrap_content"
         android:text="Pace: --:-- min/km"
         android:textSize="22sp"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="10dp"/>
 
     <Button
         android:id="@+id/startButton"
         android:layout_width="220dp"
-        android:layout_height="60dp"
+        android:layout_height="58dp"
         android:text="START RUN"
         android:textSize="18sp"
-        android:layout_marginTop="30dp"/>
+        android:layout_marginTop="25dp"/>
 
     <Button
         android:id="@+id/pauseButton"
         android:layout_width="220dp"
-        android:layout_height="60dp"
+        android:layout_height="58dp"
         android:text="PAUSE"
         android:enabled="false"/>
 
     <Button
         android:id="@+id/stopButton"
         android:layout_width="220dp"
-        android:layout_height="60dp"
+        android:layout_height="58dp"
         android:text="STOP"
         android:enabled="false"/>
+
+    <Button
+        android:id="@+id/historyButton"
+        android:layout_width="220dp"
+        android:layout_height="58dp"
+        android:text="HISTORY"
+        android:layout_marginTop="15dp"/>
 
 </LinearLayout>

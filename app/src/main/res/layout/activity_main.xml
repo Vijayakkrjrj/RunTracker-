@@ -14,14 +14,14 @@
         android:text="RUN TRACKER"
         android:textSize="30sp"
         android:textStyle="bold"
-        android:layout_marginBottom="35dp"/>
+        android:layout_marginBottom="30dp"/>
 
     <TextView
         android:id="@+id/distanceText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Distance: 0.00 km"
-        android:textSize="25sp"/>
+        android:textSize="24sp"/>
 
     <TextView
         android:id="@+id/timeText"
@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:text="Time: 00:00"
         android:textSize="22sp"
-        android:layout_marginTop="15dp"/>
+        android:layout_marginTop="12dp"/>
 
     <TextView
         android:id="@+id/speedText"
@@ -37,7 +37,23 @@
         android:layout_height="wrap_content"
         android:text="Speed: 0.0 km/h"
         android:textSize="22sp"
-        android:layout_marginTop="15dp"/>
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:id="@+id/avgSpeedText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Average: 0.0 km/h"
+        android:textSize="22sp"
+        android:layout_marginTop="12dp"/>
+
+    <TextView
+        android:id="@+id/paceText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pace: --:-- min/km"
+        android:textSize="22sp"
+        android:layout_marginTop="12dp"/>
 
     <Button
         android:id="@+id/startButton"
@@ -45,7 +61,7 @@
         android:layout_height="60dp"
         android:text="START RUN"
         android:textSize="18sp"
-        android:layout_marginTop="40dp"/>
+        android:layout_marginTop="30dp"/>
 
     <Button
         android:id="@+id/pauseButton"

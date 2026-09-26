@@ -43,8 +43,8 @@ public class TrackingService extends Service {
 
     private LocationCallback locationCallback;
 
-    // Route points of current run
-    private JSONArray routePoints;
+    // Current run route
+    private JSONArray currentRoute;
 
     @Override
     public void onCreate() {
@@ -55,8 +55,6 @@ public class TrackingService extends Service {
                         .getFusedLocationProviderClient(this);
 
         createNotificationChannel();
-
-        routePoints = new JSONArray();
 
         locationCallback = new LocationCallback() {
 
@@ -136,7 +134,7 @@ public class TrackingService extends Service {
         accumulatedTime = 0;
         lastLocation = null;
 
-        routePoints = new JSONArray();
+        currentRoute = new JSONArray();
 
         startTime =
                 System.currentTimeMillis();
@@ -225,7 +223,8 @@ public class TrackingService extends Service {
 
         saveRun(
                 totalDistance,
-                finalTime
+                finalTime,
+                currentRoute
         );
 
         running = false;
@@ -264,172 +263,11 @@ public class TrackingService extends Service {
     private void saveRoutePoint(
             Location location) {
 
+        if (currentRoute == null) {
+            currentRoute = new JSONArray();
+        }
+
         try {
 
             JSONObject point =
-                    new JSONObject();
-
-            point.put(
-                    "latitude",
-                    location.getLatitude()
-            );
-
-            point.put(
-                    "longitude",
-                    location.getLongitude()
-            );
-
-            routePoints.put(point);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    private void saveRun(
-            float distance,
-            long time) {
-
-        try {
-
-            SharedPreferences preferences =
-                    getSharedPreferences(
-                            "run_history",
-                            MODE_PRIVATE
-                    );
-
-            String oldHistory =
-                    preferences.getString(
-                            "runs",
-                            "[]"
-                    );
-
-            JSONArray runs =
-                    new JSONArray(oldHistory);
-
-            JSONObject run =
-                    new JSONObject();
-
-            float distanceKm =
-                    distance / 1000f;
-
-            float averageSpeed = 0f;
-
-            if (time > 0 && distance > 0) {
-
-                averageSpeed =
-                        distanceKm
-                                / (time / 3600000f);
-            }
-
-            float paceSecondsPerKm = 0f;
-
-            if (distanceKm > 0) {
-
-                paceSecondsPerKm =
-                        (time / 1000f)
-                                / distanceKm;
-            }
-
-            run.put(
-                    "date",
-                    new SimpleDateFormat(
-                            "dd MMM yyyy, hh:mm a",
-                            Locale.getDefault()
-                    ).format(new Date())
-            );
-
-            run.put(
-                    "distance",
-                    distanceKm
-            );
-
-            run.put(
-                    "time",
-                    time
-            );
-
-            run.put(
-                    "averageSpeed",
-                    averageSpeed
-            );
-
-            run.put(
-                    "pace",
-                    paceSecondsPerKm
-            );
-
-            // Save complete GPS route
-            run.put(
-                    "route",
-                    routePoints
-            );
-
-            runs.put(run);
-
-            preferences
-                    .edit()
-                    .putString(
-                            "runs",
-                            runs.toString()
-                    )
-                    .apply();
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    private void sendLocationUpdate(
-            Location location) {
-
-        Intent intent =
-                new Intent(
-                        "RUN_TRACKER_LOCATION"
-                );
-
-        intent.setPackage(
-                getPackageName()
-        );
-
-        intent.putExtra(
-                "latitude",
-                location.getLatitude()
-        );
-
-        intent.putExtra(
-                "longitude",
-                location.getLongitude()
-        );
-
-        intent.putExtra(
-                "distance",
-                totalDistance
-        );
-
-        intent.putExtra(
-                "time",
-                getElapsedTime()
-        );
-
-        intent.putExtra(
-                "speed",
-                location.getSpeed()
-        );
-
-        intent.putExtra(
-                "running",
-                running
-        );
-
-        intent.putExtra(
-                "paused",
-                paused
-        );
-
-        sendBroadcast(intent);
-
-        sendUpdate();
-    }
+                   

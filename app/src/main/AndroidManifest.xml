@@ -33,6 +33,10 @@
             android:name=".HistoryActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".MapActivity"
+            android:exported="false" />
+
         <service
             android:name=".TrackingService"
             android:foregroundServiceType="location"

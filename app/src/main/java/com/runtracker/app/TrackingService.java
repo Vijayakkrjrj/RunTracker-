@@ -29,6 +29,7 @@ public class TrackingService extends Service {
     private float totalDistance = 0f;
 
     private long startTime = 0;
+    private long accumulatedTime = 0;
 
     private boolean running = false;
     private boolean paused = false;
@@ -118,6 +119,7 @@ public class TrackingService extends Service {
         paused = false;
 
         totalDistance = 0f;
+        accumulatedTime = 0;
         lastLocation = null;
 
         startTime =
@@ -145,17 +147,81 @@ public class TrackingService extends Service {
             );
 
         } catch (SecurityException e) {
+
             stopSelf();
+            return;
         }
+
+        sendUpdate();
     }
 
     private void pauseTracking() {
-        paused = !paused;
+
+        if (!running) {
+            return;
+        }
+
+        if (!paused) {
+
+            accumulatedTime +=
+                    System.currentTimeMillis()
+                            - startTime;
+
+            paused = true;
+
+            locationClient.removeLocationUpdates(
+                    locationCallback
+            );
+
+        } else {
+
+            startTime =
+                    System.currentTimeMillis();
+
+            paused = false;
+
+            LocationRequest request =
+                    new LocationRequest.Builder(
+                            Priority.PRIORITY_HIGH_ACCURACY,
+                            2000
+                    )
+                    .setMinUpdateDistanceMeters(2)
+                    .build();
+
+            try {
+
+                locationClient.requestLocationUpdates(
+                        request,
+                        locationCallback,
+                        Looper.getMainLooper()
+                );
+
+            } catch (SecurityException e) {
+
+                stopSelf();
+                return;
+            }
+        }
+
+        sendUpdate();
     }
 
     private void stopTracking() {
 
+        if (!running) {
+            stopSelf();
+            return;
+        }
+
+        if (!paused) {
+
+            accumulatedTime +=
+                    System.currentTimeMillis()
+                            - startTime;
+        }
+
         running = false;
+        paused = false;
 
         locationClient.removeLocationUpdates(
                 locationCallback
@@ -168,6 +234,21 @@ public class TrackingService extends Service {
         );
 
         stopSelf();
+    }
+
+    private long getElapsedTime() {
+
+        if (!running) {
+            return accumulatedTime;
+        }
+
+        if (paused) {
+            return accumulatedTime;
+        }
+
+        return accumulatedTime +
+                (System.currentTimeMillis()
+                        - startTime);
     }
 
     private void sendUpdate() {
@@ -184,15 +265,32 @@ public class TrackingService extends Service {
 
         intent.putExtra(
                 "time",
-                System.currentTimeMillis()
-                        - startTime
+                getElapsedTime()
         );
 
-        if (lastLocation != null) {
+        intent.putExtra(
+                "running",
+                running
+        );
+
+        intent.putExtra(
+                "paused",
+                paused
+        );
+
+        if (lastLocation != null &&
+                !paused) {
 
             intent.putExtra(
                     "speed",
                     lastLocation.getSpeed()
+            );
+
+        } else {
+
+            intent.putExtra(
+                    "speed",
+                    0f
             );
         }
 
@@ -211,14 +309,15 @@ public class TrackingService extends Service {
                     intent.getAction();
 
             if ("START".equals(action)) {
+
                 startTracking();
-            }
 
-            else if ("PAUSE".equals(action)) {
+            } else if ("PAUSE".equals(action)) {
+
                 pauseTracking();
-            }
 
-            else if ("STOP".equals(action)) {
+            } else if ("STOP".equals(action)) {
+
                 stopTracking();
             }
         }
@@ -244,4 +343,4 @@ public class TrackingService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
-      }
+            }

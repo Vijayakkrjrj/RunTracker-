@@ -30,7 +30,6 @@ public class TrackingService extends Service {
             "run_tracker_channel";
 
     private FusedLocationProviderClient locationClient;
-
     private Location lastLocation;
 
     private float totalDistance = 0f;
@@ -43,7 +42,6 @@ public class TrackingService extends Service {
 
     private LocationCallback locationCallback;
 
-    // Current run route
     private JSONArray currentRoute;
 
     @Override
@@ -270,4 +268,269 @@ public class TrackingService extends Service {
         try {
 
             JSONObject point =
-                   
+                    new JSONObject();
+
+            point.put(
+                    "latitude",
+                    location.getLatitude()
+            );
+
+            point.put(
+                    "longitude",
+                    location.getLongitude()
+            );
+
+            currentRoute.put(point);
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+
+    private void saveRun(
+            float distance,
+            long time,
+            JSONArray route) {
+
+        try {
+
+            SharedPreferences preferences =
+                    getSharedPreferences(
+                            "run_history",
+                            MODE_PRIVATE
+                    );
+
+            String oldHistory =
+                    preferences.getString(
+                            "runs",
+                            "[]"
+                    );
+
+            JSONArray runs =
+                    new JSONArray(oldHistory);
+
+            JSONObject run =
+                    new JSONObject();
+
+            float distanceKm =
+                    distance / 1000f;
+
+            float averageSpeed = 0f;
+
+            if (time > 0 && distance > 0) {
+
+                averageSpeed =
+                        distanceKm
+                                / (time / 3600000f);
+            }
+
+            float paceSecondsPerKm = 0f;
+
+            if (distanceKm > 0) {
+
+                paceSecondsPerKm =
+                        (time / 1000f)
+                                / distanceKm;
+            }
+
+            run.put(
+                    "date",
+                    new SimpleDateFormat(
+                            "dd MMM yyyy, hh:mm a",
+                            Locale.getDefault()
+                    ).format(new Date())
+            );
+
+            run.put(
+                    "distance",
+                    distanceKm
+            );
+
+            run.put(
+                    "time",
+                    time
+            );
+
+            run.put(
+                    "averageSpeed",
+                    averageSpeed
+            );
+
+            run.put(
+                    "pace",
+                    paceSecondsPerKm
+            );
+
+            run.put(
+                    "route",
+                    route != null
+                            ? route
+                            : new JSONArray()
+            );
+
+            runs.put(run);
+
+            preferences
+                    .edit()
+                    .putString(
+                            "runs",
+                            runs.toString()
+                    )
+                    .apply();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+    }
+
+    private void sendLocationUpdate(
+            Location location) {
+
+        Intent intent =
+                new Intent(
+                        "RUN_TRACKER_LOCATION"
+                );
+
+        intent.setPackage(
+                getPackageName()
+        );
+
+        intent.putExtra(
+                "latitude",
+                location.getLatitude()
+        );
+
+        intent.putExtra(
+                "longitude",
+                location.getLongitude()
+        );
+
+        intent.putExtra(
+                "distance",
+                totalDistance
+        );
+
+        intent.putExtra(
+                "time",
+                getElapsedTime()
+        );
+
+        intent.putExtra(
+                "speed",
+                location.getSpeed()
+        );
+
+        intent.putExtra(
+                "running",
+                running
+        );
+
+        intent.putExtra(
+                "paused",
+                paused
+        );
+
+        sendBroadcast(intent);
+
+        sendUpdate();
+    }
+
+    private void sendUpdate() {
+
+        Intent intent =
+                new Intent(
+                        "RUN_TRACKER_UPDATE"
+                );
+
+        intent.setPackage(
+                getPackageName()
+        );
+
+        intent.putExtra(
+                "distance",
+                totalDistance
+        );
+
+        intent.putExtra(
+                "time",
+                getElapsedTime()
+        );
+
+        intent.putExtra(
+                "running",
+                running
+        );
+
+        intent.putExtra(
+                "paused",
+                paused
+        );
+
+        if (lastLocation != null &&
+                !paused) {
+
+            intent.putExtra(
+                    "speed",
+                    lastLocation.getSpeed()
+            );
+
+        } else {
+
+            intent.putExtra(
+                    "speed",
+                    0f
+            );
+        }
+
+        sendBroadcast(intent);
+    }
+
+    @Override
+    public int onStartCommand(
+            Intent intent,
+            int flags,
+            int startId) {
+
+        if (intent != null) {
+
+            String action =
+                    intent.getAction();
+
+            if ("START".equals(action)) {
+
+                startTracking();
+
+            } else if ("PAUSE".equals(action)) {
+
+                pauseTracking();
+
+            } else if ("STOP".equals(action)) {
+
+                stopTracking();
+            }
+        }
+
+        return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+
+        if (locationClient != null &&
+                locationCallback != null) {
+
+            locationClient.removeLocationUpdates(
+                    locationCallback
+            );
+        }
+
+        super.onDestroy();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+                            }

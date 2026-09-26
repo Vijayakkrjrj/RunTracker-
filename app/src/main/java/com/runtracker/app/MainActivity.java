@@ -24,26 +24,54 @@ public class MainActivity extends Activity {
     private Button pauseButton;
     private Button stopButton;
     private Button historyButton;
+    private Button mapButton;
 
-    private final BroadcastReceiver updateReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver updateReceiver =
+            new BroadcastReceiver() {
+
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(
+                Context context,
+                Intent intent) {
 
-            if (!"RUN_TRACKER_UPDATE".equals(intent.getAction())) {
+            if (!"RUN_TRACKER_UPDATE".equals(
+                    intent.getAction())) {
+
                 return;
             }
 
-            float distance = intent.getFloatExtra("distance", 0f);
-            long time = intent.getLongExtra("time", 0);
-            float speed = intent.getFloatExtra("speed", 0f);
+            float distance =
+                    intent.getFloatExtra(
+                            "distance",
+                            0f
+                    );
+
+            long time =
+                    intent.getLongExtra(
+                            "time",
+                            0
+                    );
+
+            float speed =
+                    intent.getFloatExtra(
+                            "speed",
+                            0f
+                    );
 
             boolean running =
-                    intent.getBooleanExtra("running", false);
+                    intent.getBooleanExtra(
+                            "running",
+                            false
+                    );
 
             boolean paused =
-                    intent.getBooleanExtra("paused", false);
+                    intent.getBooleanExtra(
+                            "paused",
+                            false
+                    );
 
-            float distanceKm = distance / 1000f;
+            float distanceKm =
+                    distance / 1000f;
 
             distanceText.setText(
                     String.format(
@@ -52,9 +80,14 @@ public class MainActivity extends Activity {
                     )
             );
 
-            long totalSeconds = time / 1000;
-            long minutes = totalSeconds / 60;
-            long seconds = totalSeconds % 60;
+            long totalSeconds =
+                    time / 1000;
+
+            long minutes =
+                    totalSeconds / 60;
+
+            long seconds =
+                    totalSeconds % 60;
 
             timeText.setText(
                     String.format(
@@ -74,6 +107,7 @@ public class MainActivity extends Activity {
             float averageSpeed = 0f;
 
             if (time > 0 && distance > 0) {
+
                 averageSpeed =
                         (distance / 1000f)
                                 / (time / 3600000f);
@@ -89,13 +123,18 @@ public class MainActivity extends Activity {
             if (distanceKm > 0.01f && time > 0) {
 
                 float paceSecondsPerKm =
-                        (time / 1000f) / distanceKm;
+                        (time / 1000f)
+                                / distanceKm;
 
                 int paceMinutes =
-                        (int) (paceSecondsPerKm / 60);
+                        (int) (
+                                paceSecondsPerKm / 60
+                        );
 
                 int paceSeconds =
-                        (int) (paceSecondsPerKm % 60);
+                        (int) (
+                                paceSecondsPerKm % 60
+                        );
 
                 paceText.setText(
                         String.format(
@@ -117,6 +156,7 @@ public class MainActivity extends Activity {
                 startButton.setEnabled(true);
                 pauseButton.setEnabled(false);
                 stopButton.setEnabled(false);
+
                 pauseButton.setText("PAUSE");
 
             } else if (paused) {
@@ -124,6 +164,7 @@ public class MainActivity extends Activity {
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
+
                 pauseButton.setText("RESUME");
 
             } else {
@@ -131,27 +172,71 @@ public class MainActivity extends Activity {
                 startButton.setEnabled(false);
                 pauseButton.setEnabled(true);
                 stopButton.setEnabled(true);
+
                 pauseButton.setText("PAUSE");
             }
         }
     };
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(
+            Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        setContentView(
+                R.layout.activity_main
+        );
 
-        distanceText = findViewById(R.id.distanceText);
-        timeText = findViewById(R.id.timeText);
-        speedText = findViewById(R.id.speedText);
-        avgSpeedText = findViewById(R.id.avgSpeedText);
-        paceText = findViewById(R.id.paceText);
+        distanceText =
+                findViewById(
+                        R.id.distanceText
+                );
 
-        startButton = findViewById(R.id.startButton);
-        pauseButton = findViewById(R.id.pauseButton);
-        stopButton = findViewById(R.id.stopButton);
-        historyButton = findViewById(R.id.historyButton);
+        timeText =
+                findViewById(
+                        R.id.timeText
+                );
+
+        speedText =
+                findViewById(
+                        R.id.speedText
+                );
+
+        avgSpeedText =
+                findViewById(
+                        R.id.avgSpeedText
+                );
+
+        paceText =
+                findViewById(
+                        R.id.paceText
+                );
+
+        startButton =
+                findViewById(
+                        R.id.startButton
+                );
+
+        pauseButton =
+                findViewById(
+                        R.id.pauseButton
+                );
+
+        stopButton =
+                findViewById(
+                        R.id.stopButton
+                );
+
+        historyButton =
+                findViewById(
+                        R.id.historyButton
+                );
+
+        mapButton =
+                findViewById(
+                        R.id.mapButton
+                );
 
         requestPermissionsIfNeeded();
 
@@ -169,6 +254,7 @@ public class MainActivity extends Activity {
 
         historyButton.setOnClickListener(
                 v -> {
+
                     Intent intent =
                             new Intent(
                                     MainActivity.this,
@@ -178,14 +264,30 @@ public class MainActivity extends Activity {
                     startActivity(intent);
                 }
         );
+
+        mapButton.setOnClickListener(
+                v -> {
+
+                    Intent intent =
+                            new Intent(
+                                    MainActivity.this,
+                                    MapActivity.class
+                            );
+
+                    startActivity(intent);
+                }
+        );
     }
 
     @Override
     protected void onStart() {
+
         super.onStart();
 
         IntentFilter filter =
-                new IntentFilter("RUN_TRACKER_UPDATE");
+                new IntentFilter(
+                        "RUN_TRACKER_UPDATE"
+                );
 
         if (Build.VERSION.SDK_INT >= 33) {
 
@@ -207,7 +309,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onStop() {
 
-        unregisterReceiver(updateReceiver);
+        unregisterReceiver(
+                updateReceiver
+        );
 
         super.onStop();
     }
@@ -261,8 +365,11 @@ public class MainActivity extends Activity {
         intent.setAction("START");
 
         if (Build.VERSION.SDK_INT >= 26) {
+
             startForegroundService(intent);
+
         } else {
+
             startService(intent);
         }
     }
@@ -292,4 +399,4 @@ public class MainActivity extends Activity {
 
         startService(intent);
     }
-            }
+                }

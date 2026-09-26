@@ -30,14 +30,15 @@ public class MainActivity extends Activity {
                 return;
             }
 
-            float distance =
-                    intent.getFloatExtra("distance", 0f);
+            float distance = intent.getFloatExtra("distance", 0f);
+            long time = intent.getLongExtra("time", 0);
+            float speed = intent.getFloatExtra("speed", 0f);
 
-            long time =
-                    intent.getLongExtra("time", 0);
+            boolean running =
+                    intent.getBooleanExtra("running", false);
 
-            float speed =
-                    intent.getFloatExtra("speed", 0f);
+            boolean paused =
+                    intent.getBooleanExtra("paused", false);
 
             distanceText.setText(
                     String.format(
@@ -46,9 +47,9 @@ public class MainActivity extends Activity {
                     )
             );
 
-            long seconds = time / 1000;
-            long minutes = seconds / 60;
-            seconds = seconds % 60;
+            long totalSeconds = time / 1000;
+            long minutes = totalSeconds / 60;
+            long seconds = totalSeconds % 60;
 
             timeText.setText(
                     String.format(
@@ -64,6 +65,25 @@ public class MainActivity extends Activity {
                             speed * 3.6f
                     )
             );
+
+            if (!running) {
+                startButton.setEnabled(true);
+                pauseButton.setEnabled(false);
+                stopButton.setEnabled(false);
+                pauseButton.setText("PAUSE");
+            }
+            else if (paused) {
+                startButton.setEnabled(false);
+                pauseButton.setEnabled(true);
+                stopButton.setEnabled(true);
+                pauseButton.setText("RESUME");
+            }
+            else {
+                startButton.setEnabled(false);
+                pauseButton.setEnabled(true);
+                stopButton.setEnabled(true);
+                pauseButton.setText("PAUSE");
+            }
         }
     };
 
@@ -85,7 +105,7 @@ public class MainActivity extends Activity {
 
         startButton.setOnClickListener(v -> startTracking());
 
-        pauseButton.setOnClickListener(v -> pauseTracking());
+        pauseButton.setOnClickListener(v -> pauseResumeTracking());
 
         stopButton.setOnClickListener(v -> stopTracking());
     }
@@ -152,6 +172,7 @@ public class MainActivity extends Activity {
         if (checkSelfPermission(
                 Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED) {
+
             requestPermissionsIfNeeded();
             return;
         }
@@ -166,18 +187,15 @@ public class MainActivity extends Activity {
         } else {
             startService(intent);
         }
-
-        startButton.setEnabled(false);
-        pauseButton.setEnabled(true);
-        stopButton.setEnabled(true);
     }
 
-    private void pauseTracking() {
+    private void pauseResumeTracking() {
 
         Intent intent =
                 new Intent(this, TrackingService.class);
 
         intent.setAction("PAUSE");
+
         startService(intent);
     }
 
@@ -187,10 +205,7 @@ public class MainActivity extends Activity {
                 new Intent(this, TrackingService.class);
 
         intent.setAction("STOP");
-        startService(intent);
 
-        startButton.setEnabled(true);
-        pauseButton.setEnabled(false);
-        stopButton.setEnabled(false);
+        startService(intent);
     }
-              }
+                }

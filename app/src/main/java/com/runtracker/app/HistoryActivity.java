@@ -19,7 +19,6 @@ public class HistoryActivity extends Activity {
     private Button clearButton;
 
     private ArrayList<String> historyItems;
-
     private ArrayAdapter<String> adapter;
 
     @Override
@@ -28,40 +27,38 @@ public class HistoryActivity extends Activity {
 
         setContentView(R.layout.activity_history);
 
-        historyList =
-                findViewById(R.id.historyList);
+        historyList = findViewById(R.id.historyList);
+        clearButton = findViewById(R.id.clearButton);
 
-        clearButton =
-                findViewById(R.id.clearButton);
+        historyItems = new ArrayList<>();
 
-        historyItems =
-                new ArrayList<>();
+        adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                historyItems
+        );
 
-        adapter =
-                new ArrayAdapter<>(
-                        this,
-                        android.R.layout.simple_list_item_1,
-                        historyItems
-                );
-
-        historyList.setAdapter(adapter);
+        if (historyList != null) {
+            historyList.setAdapter(adapter);
+        }
 
         loadHistory();
 
-        clearButton.setOnClickListener(v -> {
+        if (clearButton != null) {
+            clearButton.setOnClickListener(v -> {
 
-            getSharedPreferences(
-                    "run_history",
-                    MODE_PRIVATE
-            )
-            .edit()
-            .remove("runs")
-            .apply();
+                getSharedPreferences(
+                        "run_history",
+                        MODE_PRIVATE
+                )
+                .edit()
+                .remove("runs")
+                .apply();
 
-            historyItems.clear();
-
-            adapter.notifyDataSetChanged();
-        });
+                historyItems.clear();
+                adapter.notifyDataSetChanged();
+            });
+        }
     }
 
     private void loadHistory() {
@@ -82,60 +79,35 @@ public class HistoryActivity extends Activity {
 
         try {
 
-            JSONArray runs =
-                    new JSONArray(history);
+            JSONArray runs = new JSONArray(history);
 
-            for (int i = runs.length() - 1;
-                 i >= 0;
-                 i--) {
+            for (int i = runs.length() - 1; i >= 0; i--) {
 
                 JSONObject run =
                         runs.getJSONObject(i);
 
                 String date =
-                        run.optString(
-                                "date",
-                                ""
-                        );
+                        run.optString("date", "");
 
                 double distance =
-                        run.optDouble(
-                                "distance",
-                                0
-                        );
+                        run.optDouble("distance", 0);
 
                 long time =
-                        run.optLong(
-                                "time",
-                                0
-                        );
+                        run.optLong("time", 0);
 
                 double averageSpeed =
-                        run.optDouble(
-                                "averageSpeed",
-                                0
-                        );
+                        run.optDouble("averageSpeed", 0);
 
                 double pace =
-                        run.optDouble(
-                                "pace",
-                                0
-                        );
+                        run.optDouble("pace", 0);
 
-                long totalSeconds =
-                        time / 1000;
+                long totalSeconds = time / 1000;
 
-                long minutes =
-                        totalSeconds / 60;
+                long minutes = totalSeconds / 60;
+                long seconds = totalSeconds % 60;
 
-                long seconds =
-                        totalSeconds % 60;
-
-                int paceMinutes =
-                        (int) (pace / 60);
-
-                int paceSeconds =
-                        (int) (pace % 60);
+                int paceMinutes = (int) (pace / 60);
+                int paceSeconds = (int) (pace % 60);
 
                 String item =
                         date +
@@ -170,10 +142,11 @@ public class HistoryActivity extends Activity {
             }
 
         } catch (Exception e) {
-
             e.printStackTrace();
         }
 
-        adapter.notifyDataSetChanged();
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
     }
-                  }
+}

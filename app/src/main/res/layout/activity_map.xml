@@ -6,13 +6,36 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <TextView
+    <!-- Map Header -->
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="55dp"
-        android:gravity="center"
-        android:text="RUN MAP"
-        android:textSize="22sp"
-        android:textStyle="bold"/>
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="RUN MAP"
+            android:textSize="22sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ROUTE"
+            android:textSize="13sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+
+
+    <!-- Map -->
 
     <org.osmdroid.views.MapView
         android:id="@+id/mapView"

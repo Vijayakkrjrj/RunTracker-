@@ -27,18 +27,30 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Restore signing keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Generate signing keystore
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > runtracker-release.jks
-          chmod 600 runtracker-release.jks
+          keytool -genkeypair \
+            -keystore runtracker-release.jks \
+            -alias runtracker \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "RunTracker2026Secure!" \
+            -keypass "RunTracker2026Secure!" \
+            -dname "CN=RunTracker, OU=Mobile, O=RunTracker, L=India, ST=UP, C=IN"
+
+      - name: Verify generated keystore
+        run: |
+          keytool -list \
+            -keystore runtracker-release.jks \
+            -alias runtracker \
+            -storepass "RunTracker2026Secure!"
 
       - name: Build Release AAB
         env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: RunTracker2026Secure!
+          KEY_ALIAS: runtracker
+          KEY_PASSWORD: RunTracker2026Secure!
         run: |
           gradle bundleRelease --no-daemon
 

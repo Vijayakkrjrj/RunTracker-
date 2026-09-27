@@ -47,7 +47,6 @@ public class MapActivity extends Activity {
                 return;
             }
 
-            // Saved route open hai to live route update nahi karna
             if (showingSavedRoute) {
                 return;
             }
@@ -88,7 +87,9 @@ public class MapActivity extends Activity {
 
             routePoints.add(point);
 
-            routeLine.setPoints(routePoints);
+            routeLine.setPoints(
+                    routePoints
+            );
 
             updateCurrentMarker(point);
 
@@ -325,4 +326,93 @@ public class MapActivity extends Activity {
     private void updateCurrentMarker(
             GeoPoint point) {
 
-        if (currentMarker == null)
+        if (currentMarker == null) {
+
+            currentMarker =
+                    new Marker(mapView);
+
+            currentMarker.setTitle(
+                    "Current Location"
+            );
+
+            mapView.getOverlays()
+                    .add(currentMarker);
+        }
+
+        currentMarker.setPosition(
+                point
+        );
+    }
+
+    @Override
+    protected void onStart() {
+
+        super.onStart();
+
+        if (!showingSavedRoute) {
+
+            IntentFilter filter =
+                    new IntentFilter(
+                            "RUN_TRACKER_LOCATION"
+                    );
+
+            if (Build.VERSION.SDK_INT >= 33) {
+
+                registerReceiver(
+                        locationReceiver,
+                        filter,
+                        Context.RECEIVER_NOT_EXPORTED
+                );
+
+            } else {
+
+                registerReceiver(
+                        locationReceiver,
+                        filter
+                );
+            }
+        }
+    }
+
+    @Override
+    protected void onStop() {
+
+        if (!showingSavedRoute) {
+
+            try {
+
+                unregisterReceiver(
+                        locationReceiver
+                );
+
+            } catch (IllegalArgumentException e) {
+
+                e.printStackTrace();
+            }
+        }
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onResume() {
+
+        super.onResume();
+
+        if (mapView != null) {
+
+            mapView.onResume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+
+        if (mapView != null) {
+
+            mapView.onPause();
+        }
+
+        super.onPause();
+    }
+                }

@@ -12,6 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
@@ -259,13 +260,20 @@ public class MapActivity extends Activity {
                     lastPoint
             );
 
-            mapView.getController()
-                    .setCenter(
-                            firstPoint
+            /*
+             * Automatically fit the complete
+             * saved route on the screen.
+             */
+            BoundingBox boundingBox =
+                    BoundingBox.fromGeoPoints(
+                            routePoints
                     );
 
-            mapView.getController()
-                    .setZoom(17.0);
+            mapView.zoomToBoundingBox(
+                    boundingBox,
+                    true,
+                    80
+            );
 
             mapView.invalidate();
 
@@ -415,4 +423,4 @@ public class MapActivity extends Activity {
 
         super.onPause();
     }
-                }
+        }

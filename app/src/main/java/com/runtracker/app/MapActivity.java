@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
@@ -20,10 +22,16 @@ import java.util.ArrayList;
 public class MapActivity extends Activity {
 
     private MapView mapView;
+
     private Polyline routeLine;
+
     private Marker currentMarker;
+    private Marker startMarker;
+    private Marker endMarker;
 
     private ArrayList<GeoPoint> routePoints;
+
+    private boolean showingSavedRoute = false;
 
     private final BroadcastReceiver locationReceiver =
             new BroadcastReceiver() {
@@ -36,6 +44,11 @@ public class MapActivity extends Activity {
             if (!"RUN_TRACKER_LOCATION".equals(
                     intent.getAction())) {
 
+                return;
+            }
+
+            // Saved route open hai to live route update nahi karna
+            if (showingSavedRoute) {
                 return;
             }
 
@@ -77,10 +90,15 @@ public class MapActivity extends Activity {
 
             routeLine.setPoints(routePoints);
 
-            currentMarker.setPosition(point);
+            updateCurrentMarker(point);
 
-            mapView.getController()
-                    .setCenter(point);
+            if (routePoints.size() == 1) {
+
+                setStartMarker(point);
+
+                mapView.getController()
+                        .setCenter(point);
+            }
 
             mapView.invalidate();
         }
@@ -137,62 +155,174 @@ public class MapActivity extends Activity {
 
         mapView.getOverlays()
                 .add(currentMarker);
+
+        checkForSavedRoute();
     }
 
-    @Override
-    protected void onStart() {
+    private void checkForSavedRoute() {
 
-        super.onStart();
+        Intent intent =
+                getIntent();
 
-        IntentFilter filter =
-                new IntentFilter(
-                        "RUN_TRACKER_LOCATION"
+        if (intent == null) {
+            return;
+        }
+
+        String savedRoute =
+                intent.getStringExtra(
+                        "saved_route"
                 );
 
-        if (Build.VERSION.SDK_INT >= 33) {
+        if (savedRoute == null ||
+                savedRoute.isEmpty()) {
 
-            registerReceiver(
-                    locationReceiver,
-                    filter,
-                    Context.RECEIVER_NOT_EXPORTED
+            return;
+        }
+
+        showingSavedRoute = true;
+
+        loadSavedRoute(savedRoute);
+    }
+
+    private void loadSavedRoute(
+            String savedRoute) {
+
+        try {
+
+            JSONArray route =
+                    new JSONArray(savedRoute);
+
+            routePoints.clear();
+
+            for (int i = 0;
+                    i < route.length();
+                    i++) {
+
+                JSONObject point =
+                        route.getJSONObject(i);
+
+                double latitude =
+                        point.optDouble(
+                                "latitude",
+                                0
+                        );
+
+                double longitude =
+                        point.optDouble(
+                                "longitude",
+                                0
+                        );
+
+                if (latitude == 0 &&
+                        longitude == 0) {
+
+                    continue;
+                }
+
+                GeoPoint geoPoint =
+                        new GeoPoint(
+                                latitude,
+                                longitude
+                        );
+
+                routePoints.add(
+                        geoPoint
+                );
+            }
+
+            if (routePoints.isEmpty()) {
+                return;
+            }
+
+            routeLine.setPoints(
+                    routePoints
             );
 
-        } else {
+            GeoPoint firstPoint =
+                    routePoints.get(0);
 
-            registerReceiver(
-                    locationReceiver,
-                    filter
+            GeoPoint lastPoint =
+                    routePoints.get(
+                            routePoints.size() - 1
+                    );
+
+            setStartMarker(
+                    firstPoint
             );
+
+            setEndMarker(
+                    lastPoint
+            );
+
+            currentMarker.setPosition(
+                    lastPoint
+            );
+
+            mapView.getController()
+                    .setCenter(
+                            firstPoint
+                    );
+
+            mapView.getController()
+                    .setZoom(17.0);
+
+            mapView.invalidate();
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
         }
     }
 
-    @Override
-    protected void onStop() {
+    private void setStartMarker(
+            GeoPoint point) {
 
-        unregisterReceiver(
-                locationReceiver
+        if (startMarker != null) {
+
+            mapView.getOverlays()
+                    .remove(startMarker);
+        }
+
+        startMarker =
+                new Marker(mapView);
+
+        startMarker.setPosition(
+                point
         );
 
-        super.onStop();
+        startMarker.setTitle(
+                "Start"
+        );
+
+        mapView.getOverlays()
+                .add(startMarker);
     }
 
-    @Override
-    protected void onResume() {
+    private void setEndMarker(
+            GeoPoint point) {
 
-        super.onResume();
+        if (endMarker != null) {
 
-        if (mapView != null) {
-            mapView.onResume();
-        }
-    }
-
-    @Override
-    protected void onPause() {
-
-        if (mapView != null) {
-            mapView.onPause();
+            mapView.getOverlays()
+                    .remove(endMarker);
         }
 
-        super.onPause();
+        endMarker =
+                new Marker(mapView);
+
+        endMarker.setPosition(
+                point
+        );
+
+        endMarker.setTitle(
+                "Finish"
+        );
+
+        mapView.getOverlays()
+                .add(endMarker);
     }
-}
+
+    private void updateCurrentMarker(
+            GeoPoint point) {
+
+        if (currentMarker == null)

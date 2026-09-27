@@ -1,6 +1,7 @@
 package com.runtracker.app;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -21,6 +22,8 @@ public class HistoryActivity extends Activity {
     private ArrayList<String> historyItems;
     private ArrayAdapter<String> adapter;
 
+    private JSONArray runs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,27 +41,73 @@ public class HistoryActivity extends Activity {
                 historyItems
         );
 
-        if (historyList != null) {
-            historyList.setAdapter(adapter);
-        }
+        historyList.setAdapter(adapter);
 
         loadHistory();
 
-        if (clearButton != null) {
-            clearButton.setOnClickListener(v -> {
+        historyList.setOnItemClickListener(
+                (parent, view, position, id) -> {
 
-                getSharedPreferences(
-                        "run_history",
-                        MODE_PRIVATE
-                )
-                .edit()
-                .remove("runs")
-                .apply();
+                    try {
 
-                historyItems.clear();
-                adapter.notifyDataSetChanged();
-            });
-        }
+                        // History screen newest-first hai,
+                        // isliye original JSON index nikalo.
+                        int originalIndex =
+                                runs.length() - 1 - position;
+
+                        JSONObject selectedRun =
+                                runs.getJSONObject(originalIndex);
+
+                        String route =
+                                selectedRun.optString(
+                                        "route",
+                                        "[]"
+                                );
+
+                        Intent intent =
+                                new Intent(
+                                        HistoryActivity.this,
+                                        MapActivity.class
+                                );
+
+                        intent.putExtra(
+                                "saved_route",
+                                route
+                        );
+
+                        intent.putExtra(
+                                "saved_date",
+                                selectedRun.optString(
+                                        "date",
+                                        ""
+                                )
+                        );
+
+                        startActivity(intent);
+
+                    } catch (Exception e) {
+
+                        e.printStackTrace();
+                    }
+                }
+        );
+
+        clearButton.setOnClickListener(v -> {
+
+            getSharedPreferences(
+                    "run_history",
+                    MODE_PRIVATE
+            )
+            .edit()
+            .remove("runs")
+            .apply();
+
+            historyItems.clear();
+
+            runs = new JSONArray();
+
+            adapter.notifyDataSetChanged();
+        });
     }
 
     private void loadHistory() {
@@ -79,7 +128,7 @@ public class HistoryActivity extends Activity {
 
         try {
 
-            JSONArray runs = new JSONArray(history);
+            runs = new JSONArray(history);
 
             for (int i = runs.length() - 1; i >= 0; i--) {
 
@@ -87,27 +136,49 @@ public class HistoryActivity extends Activity {
                         runs.getJSONObject(i);
 
                 String date =
-                        run.optString("date", "");
+                        run.optString(
+                                "date",
+                                ""
+                        );
 
                 double distance =
-                        run.optDouble("distance", 0);
+                        run.optDouble(
+                                "distance",
+                                0
+                        );
 
                 long time =
-                        run.optLong("time", 0);
+                        run.optLong(
+                                "time",
+                                0
+                        );
 
                 double averageSpeed =
-                        run.optDouble("averageSpeed", 0);
+                        run.optDouble(
+                                "averageSpeed",
+                                0
+                        );
 
                 double pace =
-                        run.optDouble("pace", 0);
+                        run.optDouble(
+                                "pace",
+                                0
+                        );
 
-                long totalSeconds = time / 1000;
+                long totalSeconds =
+                        time / 1000;
 
-                long minutes = totalSeconds / 60;
-                long seconds = totalSeconds % 60;
+                long minutes =
+                        totalSeconds / 60;
 
-                int paceMinutes = (int) (pace / 60);
-                int paceSeconds = (int) (pace % 60);
+                long seconds =
+                        totalSeconds % 60;
+
+                int paceMinutes =
+                        (int) (pace / 60);
+
+                int paceSeconds =
+                        (int) (pace % 60);
 
                 String item =
                         date +
@@ -136,17 +207,20 @@ public class HistoryActivity extends Activity {
                                 "Pace: %02d:%02d min/km",
                                 paceMinutes,
                                 paceSeconds
-                        );
+                        ) +
+                        "\n\n" +
+                        "Tap to view route on MAP";
 
                 historyItems.add(item);
             }
 
         } catch (Exception e) {
+
             e.printStackTrace();
+
+            runs = new JSONArray();
         }
 
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
-        }
+        adapter.notifyDataSetChanged();
     }
-}
+                            }

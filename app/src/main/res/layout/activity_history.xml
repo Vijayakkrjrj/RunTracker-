@@ -7,25 +7,47 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Header -->
+
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="RUN HISTORY"
         android:textSize="28sp"
         android:textStyle="bold"
-        android:layout_gravity="center"
-        android:layout_marginBottom="15dp"/>
+        android:gravity="center"
+        android:padding="12dp"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your previous runs"
+        android:textSize="15sp"
+        android:gravity="center"
+        android:layout_marginBottom="12dp"/>
+
+
+    <!-- History List -->
 
     <ListView
         android:id="@+id/historyList"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:dividerHeight="10dp"
+        android:clipToPadding="false"
+        android:paddingBottom="10dp"/>
+
+
+    <!-- Clear History -->
 
     <Button
         android:id="@+id/clearButton"
         android:layout_width="match_parent"
         android:layout_height="55dp"
-        android:text="CLEAR HISTORY"/>
+        android:text="CLEAR HISTORY"
+        android:textStyle="bold"
+        android:layout_marginTop="8dp"/>
 
 </LinearLayout>
